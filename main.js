@@ -54,6 +54,7 @@ function clearResults() {
 function runsearch(s) {
     if (!s || search_running) return;
     search_running = true;
+    $(".mdl-spinner").addClass('is-active');
     $.ajax({
         dataType: "jsonp",
         url: "https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&utf8=1&srsearch="+s+"&sroffset="+pos,
@@ -61,6 +62,7 @@ function runsearch(s) {
     })
         .done(function (data) {
             search_running = false;
+            $(".mdl-spinner").removeClass('is-active');
             if (data.hasOwnProperty('error')) {
                 alert("Error: "+data.error.info);
             }
@@ -72,6 +74,7 @@ function runsearch(s) {
             }
         })
         .fail(function(jqXHR, status, err) {
+            $(".mdl-spinner").removeClass('is-active');
             search_running = false;
             alert("Wikipedia search failed, msg: "+ status+", err: "+err);
         });
