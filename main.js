@@ -13,6 +13,9 @@ var mock=[
     },
 ];
 
+var pos;
+var search_string;
+var search_running = false;
 
 function raise() {
     $(this).removeClass('mdl-shadow--4dp');
@@ -49,13 +52,15 @@ function clearResults() {
 }
 
 function runsearch(s) {
-    if (!s) return;
+    if (!s || search_running) return;
+    search_running = true;
     $.ajax({
         dataType: "jsonp",
-        url: "https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&utf8=1&srsearch="+s,
+        url: "https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&utf8=1&srsearch="+s+"&sroffset="+pos,
         headers: { 'Api-User-Agent': 'Wiview/1.0 (Wikipedia viewer, FreecodeCamp project by Szomolanyi' }
     })
         .done(function (data) {
+            search_running = false;
             if (data.hasOwnProperty('error')) {
                 alert("Error: "+data.error.info);
             }
@@ -63,22 +68,45 @@ function runsearch(s) {
                 for (i=0; i<data.query.search.length; i++) {
                     showResults(data.query.search[i]);    
                 }
+                pos+=data.query.search.length;
             }
         })
         .fail(function(jqXHR, status, err) {
+            search_running = false;
             alert("Wikipedia search failed, msg: "+ status+", err: "+err);
         });
+}
+
+function do_search(val, cont) {
+    if (!val) {
+        clearResults();
+        pos=0;
+    }
+    if (!cont) {
+        clearResults();
+        pos=0;
+        search_string = val;
+    }
+    if (search_string && val!=search_string) {
+        clearResults();
+        pos=0;
+        search_string = val;
+    }
+    runsearch(search_string);
 }
 
 $(document).ready(function() {
     $("#searchbox1").on("keypress", function(e) {
         if (e.which == 13) {
-            clearResults();
-            runsearch($("#searchbox1").val());
+            do_search($("#searchbox1").val(), false);
         }
     });
     $("#b-search").on('click', function() {
-        clearResults();
-        runsearch($("#searchbox1").val());
+        do_search($("#searchbox1").val(), false);
+    });
+    $(window).scroll(function() {
+        if($(window).scrollTop() + $(window).height() === $(document).height()) {
+            do_search($("#searchbox1").val(), true);
+        }
     });
 });
